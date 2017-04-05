@@ -1,50 +1,46 @@
 /**
  * Created by Simon on 04.01.2017.
+ * Represents a card in the game Dobble
  */
-public class Karte {
-    public int symbols[];
-    public boolean occurences[];
-    public int maxSymbol = 0;
+class Karte {
+    private int[] symbols;
+    private boolean[] occurences;
+    private int maxSymbol = 0;
 
-    public Karte(int newSize) {
+    Karte(int newSize) {
         symbols = new int[newSize];
+        occurences = new boolean[1];
     }
 
     //Annahme: alle Symbole sind größer als null
-    public Karte(int nsymbols[]) {
+    Karte(int nsymbols[]) {
         symbols = new int[nsymbols.length];
         symbols = nsymbols;
-        for(int i = 0; i < symbols.length; ++i) {
-            if(symbols[i] > maxSymbol) {
-                maxSymbol = symbols[i];
+        for (int symbol : symbols) {
+            if (symbol > maxSymbol) {
+                maxSymbol = symbol;
             }
         }
         occurences = new boolean[maxSymbol + 1];
-        for(int i = 0; i < symbols.length; ++i) {
-            occurences[symbols[i]] = true;
+        for (int symbol : symbols) {
+            occurences[symbol] = true;
         }
     }
 
-    public Karte getCopy() {
+    Karte getCopy() {
         Karte nkarte = new Karte(symbols.length);
-        for(int i = 0; i < symbols.length; ++i) {
-            nkarte.symbols[i] = symbols[i];
-        }
+        System.arraycopy(symbols, 0, nkarte.symbols, 0, symbols.length);
         nkarte.maxSymbol = maxSymbol;
         nkarte.occurences = new boolean[maxSymbol + 1];
-        for(int j = 1; j < maxSymbol + 1; ++j) {
-            nkarte.occurences[j] = occurences[j];
-        }
+        System.arraycopy(occurences, 0, nkarte.occurences, 0, maxSymbol + 1);
         return nkarte;
     }
 
-    public void setSymbol(int pos, int symbol) {
+    void setSymbol(int pos, int symbol) {
         symbols[pos] = symbol;
         if(symbol > maxSymbol) {
-            boolean newoccurences[] = new boolean[symbol + symbol - maxSymbol];
-            for(int i = 1; i < maxSymbol + 1; ++i) {
-                newoccurences[i] = occurences[i];
-            }
+            boolean newoccurences[] = new boolean[symbol + 1];
+            System.arraycopy(occurences, 0, newoccurences, 0, maxSymbol + 1);
             maxSymbol = symbol;
             occurences = newoccurences;
         }
@@ -57,7 +53,7 @@ public class Karte {
     }
     */
 
-    public int getSymbol(int index) {
+    int getSymbol(int index) {
         if(index > -1 && index < symbols.length) {
             return symbols[index];
         } else {
@@ -65,65 +61,70 @@ public class Karte {
         }
     }
 
-    public int getSymbolCount() {
+    int getSymbolCount() {
         return symbols.length;
     }
 
-    public int getMaxSymbol() {
-        return maxSymbol;
-    }
+// --Commented out by Inspection START (05.04.2017 14:31):
+//    private int getMaxSymbol() {
+//        return maxSymbol;
+//    }
+// --Commented out by Inspection STOP (05.04.2017 14:31)
 
-    //Prüft, ob eine Karte nur Symbole trägt, die größer als null sind (ob die Karte vollständig besetzt ist)
-    //und ob die Karte kein Symbol doppelt trägt
-    private boolean isValid() {
-        boolean hasOccured[] = new boolean[maxSymbol + 1];
-        for(int i = 0; i < symbols.length; ++i) {
-            if(symbols[i] <= 0) {
-                return false;
-            }
-            if(hasOccured[symbols[i]]) {
-                return false;
-            }
-            hasOccured[symbols[i]] = true;
-        }
-        return true;
-    }
+// --Commented out by Inspection START (05.04.2017 14:31):
+//    //Prüft, ob eine Karte nur Symbole trägt, die größer als null sind (ob die Karte vollständig besetzt ist)
+//    //und ob die Karte kein Symbol doppelt trägt
+//    private boolean isValid() {
+//        boolean hasOccured[] = new boolean[maxSymbol + 1];
+//        for(int i = 0; i < symbols.length; ++i) {
+//            if(symbols[i] <= 0) {
+//                return false;
+//            }
+//            if(hasOccured[symbols[i]]) {
+//                return false;
+//            }
+//            hasOccured[symbols[i]] = true;
+//        }
+//        return true;
+//    }
+// --Commented out by Inspection STOP (05.04.2017 14:31)
 
-    // Gibt an, ob zwei Karten genau ein gemeinsames Symbol haben. Annahme: Beide Karten sind "Valid"
-    public boolean fitTogether(Karte card) {
-        //boolean occuredHere[] = new boolean[maxSymbol];
-        boolean occuredThere[] = new boolean[card.getMaxSymbol() + 1];
-        boolean haveCommon = false;
-        for(int i = 0; i < card.getSymbolCount(); ++i) {
-            occuredThere[card.getSymbol(i)] = true;
-        }
-        for(int i = 0; i < symbols.length; ++i) {
-            if(symbols[i] <= card.getMaxSymbol() && occuredThere[symbols[i]]) {
-                if(haveCommon) {
-                    return false;
-                } else {
-                    haveCommon = true;
-                }
-            }
-        }
-        return haveCommon;
-    }
+// --Commented out by Inspection START (05.04.2017 14:30):
+//    // Gibt an, ob zwei Karten genau ein gemeinsames Symbol haben. Annahme: Beide Karten sind "Valid"
+//    public boolean fitTogether(Karte card) {
+//        //boolean occuredHere[] = new boolean[maxSymbol];
+//        boolean occuredThere[] = new boolean[card.getMaxSymbol() + 1];
+//        boolean haveCommon = false;
+//        for(int i = 0; i < card.getSymbolCount(); ++i) {
+//            occuredThere[card.getSymbol(i)] = true;
+//        }
+//        for(int i = 0; i < symbols.length; ++i) {
+//            if(symbols[i] <= card.getMaxSymbol() && occuredThere[symbols[i]]) {
+//                if(haveCommon) {
+//                    return false;
+//                } else {
+//                    haveCommon = true;
+//                }
+//            }
+//        }
+//        return haveCommon;
+//    }
+// --Commented out by Inspection STOP (05.04.2017 14:30)
 
-    //Prüft ein Kartendeck auf seine Gültigkeit
-    //nicht feddich
-    public static boolean isValidSet(Karte cards[]) {
-        for(int i = 0; i < cards.length; ++i) {
-            if(!cards[i].isValid()) {
-                return false;
-            }
-        }
-        return true;
-    }
+// --Commented out by Inspection START (05.04.2017 14:30):
+//    //Prüft ein Kartendeck auf seine Gültigkeit
+//    //nicht feddich
+//    public static boolean isValidSet(Karte cards[]) {
+//        for(int i = 0; i < cards.length; ++i) {
+//            if(!cards[i].isValid()) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
+// --Commented out by Inspection STOP (05.04.2017 14:30)
 
-    public boolean hasSymbol(int symbol) {
-        if(symbol > maxSymbol) {
-            return false;
-        }
-        return occurences[symbol];
+    boolean hasSymbol(int symbol) {
+        return symbol <= maxSymbol && occurences[symbol];
     }
 }
