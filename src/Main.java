@@ -1,26 +1,30 @@
+import java.util.ArrayList;
+
 /**
  * Created by Simon on 04.01.2017.
  * Provides methods for generating the configuration with least different symbols for a given card number and number of symbols per card
  */
+
 class Main {
     private static Karte bestSet[];
     private static int bestSymbolCount = -1; //value indicates that no minimum has been found yet
 
     public static void main(String args[]) {
-        int cards = 8;
-        int symbolsPerCard = 6;
-        //for(int i = 1; i < 18; ++i) {
-            //for(int i2 = 1; i2 < 11; ++i2) {
-                System.out.println(cards + " Karten, " + symbolsPerCard + " Symbole: " + getMinSymbolCount(cards, symbolsPerCard));
-                printCardSet(bestSet);
-                bestSymbolCount = -1;
-            //}
-        //}
+        int cards = 14;
+        int symbolsPerCard = 4;
+        long earl2 = System.nanoTime();
+        System.out.println(cards + " Karten, " + symbolsPerCard + " Symbole: " + getMinSymbolCount2(cards, symbolsPerCard, false));
+        long late2 = System.nanoTime();
+        System.out.println("Time elapsed using new method: " + ((late2 - earl2) / 1000000000.0) + " seconds");
+        printCardSet(bestSet);
         /*
-        for(int i = 1; i < 11; i++) {
-            String s = "";
-            for(int i1 = 1; i1 < 6; ++i1) {
-                s = s + " " + (i1 * i - (i1 * (i1 - 1)) / 2) + " ";
+        for(int i = 1; i < 8; ++i) {
+            StringBuilder s = new StringBuilder();
+            for (int i2 = 1; i2 < 8; ++i2) {
+                //System.out.println(cards + " Karten, " + symbolsPerCard + " Symbole: " + getMinSymbolCount2(cards, symbolsPerCard, false));
+                s.append(" ").append(getMinSymbolCount(i2, i, false)).append(" ");
+                //printCardSet(bestSet);
+                bestSymbolCount = -1;
             }
             System.out.println(s);
         }
@@ -38,13 +42,16 @@ class Main {
         System.out.println();
     }
 
+    //Version 2
+    private static final ArrayList<GenState> states = new ArrayList<>();
+
     @SuppressWarnings("SameParameterValue")
-    private static int getMinSymbolCount(int cards, int symbolsPerCard) {
+    private static int getMinSymbolCount2(int cards, int symbolsPerCard, boolean doPrinting) {
         if(cards == 0) {
             return 0;
         }
         if(symbolsPerCard == 0) {
-            return -1;
+            return 0;
         }
         Karte karten[] = new Karte[cards];
         for(int i = 0; i < cards; ++i) {
@@ -71,12 +78,30 @@ class Main {
             karten[1] = new Karte(starterpack2);
         }
         boolean satisfied[] = new boolean[cards];
-        return recGetMinSymbolCount(karten, symbolsPerCard, cards, filledCards, 0, symbolCountSoFar, satisfied, 0);
+
+        recGetMinSymbolCount2(karten, symbolsPerCard, cards, filledCards, 0, symbolCountSoFar, satisfied, doPrinting);
+        while(!states.isEmpty()) {
+            states.sort((a, b) -> a.score < b.score ? -1 : a.score == b.score ? (a.filledCards * symbolsPerCard + a.filledSymbols > b.filledCards * symbolsPerCard + b.filledSymbols ? 1 : a.filledCards * symbolsPerCard + a.filledSymbols == b.filledCards * symbolsPerCard + b.filledSymbols? 0 : -1) : 1); //subtraction trick will work because of small numbers
+            GenState next = states.get(states.size() - 1);
+            recGetMinSymbolCount2(next.cards, next.symbolsPerCard, next.cardCount, next.filledCards, next.filledSymbols, next.symbolCountSoFar, next.satisfied, doPrinting);
+            states.remove(next);
+            if(bestSymbolCount != -1) {
+                states.removeIf(s -> s.symbolCountSoFar >= bestSymbolCount);
+                /*
+                if (states.get(i).symbolCountSoFar >= bestSymbolCount) {
+                    states.removeAll(states.subList(i, states.size() - 1));
+                    break;
+                }
+                */
+            }
+            //System.out.println(states.size());
+        }
+        return bestSymbolCount;
     }
 
     /*
      * Sollte nur von getMinSymbolCount aufgerufen werden
-     * Liefert die minimale Anzahl an unterschiedlichen Symbolen bei vorgegebenen Bedingungen
+     * Liefert die minimale Anzahl an unterschiedlichen Symbolen bei vorgegebenen Bedingungen (2. Version)
      * Parameter:
      * cards: Array an Karten, die bis hierhin generiert wurden
      * symbolsPerCard: Anzahl der Symbole, die eine voll ausgefüllte Karte trägt
@@ -86,8 +111,8 @@ class Main {
      * symbolCountSoFar: Die Anzahl der Symbole, die bis jetzt benutzt wurden (gleichbedeutend mit dem höchsten bis jetzt benutzten Symbol)
      * satisfied: gibt für jede Karte an, ob diese durch die aktuell zu füllende Karte schon "befriedigt" ist
      */
-    private static int recGetMinSymbolCount(Karte cards[], int symbolsPerCard, int cardCount, int filledCards, int filledSymbols, int symbolCountSoFar, boolean satisfied[], double percentDone) {
-        printCardSet(cards);
+    private static void recGetMinSymbolCount2(Karte cards[], int symbolsPerCard, int cardCount, int filledCards, int filledSymbols, int symbolCountSoFar, boolean satisfied[], boolean doPrinting) {
+        //printCardSet(cards);
         //wurde soeben eine neue Karte fertiggestellt, so wird dieser block durchlaufen
         if(filledSymbols == symbolsPerCard) {
             filledSymbols = 0;
@@ -100,10 +125,12 @@ class Main {
             if(symbolCountSoFar < bestSymbolCount || bestSymbolCount == -1) {
                 bestSymbolCount = symbolCountSoFar;
                 bestSet = cards;
-                System.out.println("New best: Only " + symbolCountSoFar + " symbols!");
-                printCardSet(cards);
+                if(doPrinting) {
+                    System.out.println("New best: Only " + symbolCountSoFar + " symbols!");
+                    printCardSet(cards);
+                }
             }
-            return symbolCountSoFar;
+            return;
         }
         //der index der ersten karte, die noch nicht 'befriedigt' wurde
         int i = 0;
@@ -112,12 +139,10 @@ class Main {
         }
         if(i == filledCards) {
             //es wurden bereits alle befüllten karten befriedigt und die aktuelle karte muss mit neuen symbolen aufgefüllt werden, außer diese config ist schon zu kacke
-            if(bestSymbolCount != -1 && symbolCountSoFar >= bestSymbolCount) {
-                return -1;
-            } else {
+            if(bestSymbolCount == -1 || symbolCountSoFar < bestSymbolCount) {
                 //Falls das Auffüllen über das aktuelle minimum hinausgeht (oder gleich ist), wird abgebrochen
                 if(symbolCountSoFar + symbolsPerCard - filledSymbols >= bestSymbolCount && bestSymbolCount != -1) {
-                    return -1;
+                    return;
                 }
                 //Kopieren des Kartenarrays
                 Karte ncards[] = new Karte[cards.length];
@@ -128,10 +153,21 @@ class Main {
                 for(int i3 = filledSymbols; i3 < symbolsPerCard; ++i3) {
                     ncards[filledCards].setSymbol(i3, symbolCountSoFar + i3 - filledSymbols + 1);
                 }
-                return recGetMinSymbolCount(ncards, symbolsPerCard, cardCount, filledCards, symbolsPerCard, symbolCountSoFar + symbolsPerCard - filledSymbols, satisfied, percentDone);
+                if(filledCards == cardCount - 1) {
+                    //Alle Karten wurden befüllt
+                    if(bestSymbolCount == -1 || symbolCountSoFar + symbolsPerCard - filledSymbols < bestSymbolCount) {
+                        bestSymbolCount = symbolCountSoFar + symbolsPerCard - filledSymbols;
+                        bestSet = ncards;
+                        if(doPrinting) {
+                            System.out.println("New best: Only " + (symbolCountSoFar + symbolsPerCard - filledSymbols) + " symbols!");
+                            printCardSet(ncards);
+                        }
+                    }
+                } else {
+                    states.add(new GenState(ncards, symbolsPerCard, cardCount, filledCards, symbolsPerCard, symbolCountSoFar + symbolsPerCard - filledSymbols, satisfied));
+                }
             }
         } else {
-            int curmin = -1;
             for (int j = 0; j < symbolsPerCard; ++j) {
                 boolean possibleToSetj = true;
                 //Das symbol, das versucht wird, zu setzen
@@ -167,28 +203,21 @@ class Main {
                                 nsatisfied[m] = true;
                             }
                         }
-                        int possibleMinimum = recGetMinSymbolCount(ncards, symbolsPerCard, cardCount, filledCards, filledSymbols + 1, symbolCountSoFar, nsatisfied, percentDone);
-                        if(possibleMinimum != -1) {
-                            if(curmin == -1) {
-                                curmin = possibleMinimum;
-                            } else {
-                                if (possibleMinimum < curmin) {
-                                    curmin = possibleMinimum;
-                                }
-                            }
-                            if(symbolCountSoFar == curmin) {
-                                return curmin;
-                            }
+                        recGetMinSymbolCount2(ncards, symbolsPerCard, cardCount, filledCards, filledSymbols + 1, symbolCountSoFar, nsatisfied, doPrinting);
+                        if(symbolCountSoFar >= bestSymbolCount && bestSymbolCount != -1) {
+                            return;
                         }
                     }
                 }
+                //Difficult because of states
+                /*
                 double percincr = Math.pow(1.0 / symbolsPerCard, (filledCards - 1) * symbolsPerCard + filledSymbols + 1) * 100.0;
                 percentDone += percincr;
                 if(percincr > 0.001) {
                     System.out.println(percentDone + " percent done!");
                 }
+                */
             }
-            return curmin;
         }
     }
 }
